@@ -5,10 +5,10 @@
     "description": "Version 2.0",
     "version": "1.0.0"
   },
-  "host": "https://hh-gs.onrender.com",
+  "host": "hh-gs.onrender.com",
   "basePath": "/",
   "schemes": [
-    "http"
+    "https"
   ],
   "paths": {
     "/": {
