@@ -8,7 +8,7 @@ const doc = {
      host: "hh-gs.onrender.com",
     // host: "localhost:8000",
     basePath: "/",
-    schemes: ["http"],
+    schemes: ["https"],
 };
 
 const outputFile = "./swagger-output.json";
