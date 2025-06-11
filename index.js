@@ -18,12 +18,12 @@ app.use("/apis", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use("/api", route);
 
 mongoose
-    .connect(uri.url)
+    .connect(uri.mongoURI)
     .then(() => {
         console.log("MongoDB connected!");
     })
     .catch((error) => {
-        console.log(`Error connecting to MongoDB: ${err.message}`);
+        console.log(`Error connecting to MongoDB: ${error.message}`);
     })
 
 // Default route
