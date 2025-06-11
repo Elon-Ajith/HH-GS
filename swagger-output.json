@@ -8,7 +8,7 @@
   "host": "hh-gs.onrender.com",
   "basePath": "/",
   "schemes": [
-    "https"
+    "http"
   ],
   "paths": {
     "/": {
