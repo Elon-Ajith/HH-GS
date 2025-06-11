@@ -5,7 +5,8 @@ const doc = {
         title: "Hike Healthgs private Limited",
         description: "Version 2.0"
     },
-    host: "localhost:8000",
+     host: "https://hh-gs.onrender.com",
+    // host: "localhost:8000",
     basePath: "/",
     schemes: ["http"],
 };
