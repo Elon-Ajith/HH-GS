@@ -21,7 +21,7 @@
         }
       }
     },
-    "/api/api/register": {
+    "/api/emp/register": {
       "post": {
         "tags": [
           "Employee controller"
@@ -63,7 +63,7 @@
         }
       }
     },
-    "/api/api/getAll": {
+    "/api/emp/getAll": {
       "get": {
         "tags": [
           "Employee controller"
@@ -79,7 +79,7 @@
         }
       }
     },
-    "/api/api/getById/{empId}": {
+    "/api/emp/getById/{empId}": {
       "get": {
         "tags": [
           "Employee controller"
@@ -106,7 +106,7 @@
         }
       }
     },
-    "/api/api/delete/{id}": {
+    "/api/emp/delete/{id}": {
       "delete": {
         "tags": [
           "Employee controller"
@@ -126,6 +126,100 @@
           },
           "201": {
             "description": "Created"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/attendance/checkIn": {
+      "post": {
+        "tags": [
+          "Attendance controller"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "empId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/attendance/checkOut": {
+      "post": {
+        "tags": [
+          "Attendance controller"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "empId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/attendance/getAll": {
+      "get": {
+        "tags": [
+          "Attendance controller"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           },
           "500": {
             "description": "Internal Server Error"

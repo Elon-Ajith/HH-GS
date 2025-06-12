@@ -10,6 +10,9 @@ const empSchema = new mongoose.Schema({
     },
     dateOfJoin: {
         type: String,
-    }
+    },
+    checkIn:{
+         type: Boolean,
+    }    
 })
 module.exports = mongoose.model("Employee", empSchema);
