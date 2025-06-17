@@ -226,6 +226,39 @@
           }
         }
       }
+    },
+    "/api/attendance/getAllById": {
+      "get": {
+        "tags": [
+          "Attendance controller"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "empId",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
     }
   }
 }

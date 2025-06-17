@@ -43,9 +43,24 @@ exports.checkOut = (req, res) => {
 
 exports.getAll = (req, res) => {
     //#swagger.tags = ['Attendance controller']
-    const{date, month} = req.query;
+    const { date, month } = req.query;
     attendanceService
         .getAll(req.query)
+        .then((response) => {
+            return res.status(200).json(response);
+        })
+        .catch((error) => {
+            return res.status(500).json({
+                message: error.message || "Internal server error",
+            });
+        });
+};
+
+exports.getAllById = (req, res) => {
+    //#swagger.tags = ['Attendance controller']
+    const { empId, date, month } = req.query;
+    attendanceService
+        .getAllById(req.query)
         .then((response) => {
             return res.status(200).json(response);
         })

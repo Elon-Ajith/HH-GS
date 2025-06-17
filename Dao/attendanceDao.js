@@ -8,3 +8,7 @@ exports.getAll = async () => {
 exports.findByEmpId = async (empId) => {
     return await attendanceModel.findOne({empId});
 };
+
+exports.findAll = async(empId) =>{
+    return await attendanceModel.find({empId:empId})
+}
