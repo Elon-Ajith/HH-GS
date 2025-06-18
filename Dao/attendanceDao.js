@@ -12,3 +12,7 @@ exports.findByEmpId = async (empId) => {
 exports.findAll = async(empId) =>{
     return await attendanceModel.find({empId:empId})
 }
+
+exports.getCheckInTime =async (empId) =>{
+    return await attendanceModel.findOne({empId})
+}
