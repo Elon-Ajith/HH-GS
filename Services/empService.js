@@ -78,16 +78,13 @@ exports.getById = (empId) => {
                     time = istTime.toLowerCase(); // Example: "10:00 am"
                 }
             }
+            const employeeData = employee.toObject();
+            employeeData.time = time;
 
             resolve({
                 message: "Employee data fetched successfully!...",
-                data: {
-                    employee,
-                    time
-                }
+                data:employeeData
             });
-
-
         } catch (error) {
             reject({
                 message: "An error occurred",
