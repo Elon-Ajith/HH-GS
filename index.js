@@ -33,6 +33,7 @@ app.get("/", (req, res) => {
     res.send("Welcome to HH-GS!");
 });
 
-app.listen(8000, () => {
-    console.log("Server connected on port 8000")
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+    console.log(`Server connected on port${PORT}`)
 })
