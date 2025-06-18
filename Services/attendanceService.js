@@ -5,21 +5,33 @@ const attendanceDao = require('../Dao/attendanceDao')
 exports.checkIn = (empId) => {
     return new Promise(async (resolve, reject) => {
         try {
+            let time;
             const attendances = new attendance({
                 empId,
                 checkInTime: new Date()
             });
 
             await attendances.save();
+            const checkInTime = attendances.checkInTime
+            const istTime = new Date(checkInTime).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'Asia/Kolkata' // ✅ Convert UTC to IST
+            });
+            time = istTime.toLowerCase(); // Example: "10:00 am"
             await empModel.findOneAndUpdate(
                 { empId },              // Find by empId
                 { checkIn: true },      // Update the checkIn field to true
                 { new: true }           // Return the updated document (optional)
             );
-
+            const result = {
+                attendances,
+                time
+            }
             resolve({
                 message: "Employee CheckIn successfully!...",
-                data: attendances
+                data:result
             });
         } catch (error) {
             reject({
@@ -102,10 +114,10 @@ exports.getAll = (data) => {
             if (!date && !month) {
                 const date = new Date();
                 const year = date.getFullYear();
-                const mon = (date.getMonth() + 1).toString().padStart(2, '0'); 
+                const mon = (date.getMonth() + 1).toString().padStart(2, '0');
                 const start = new Date(`${year}-${mon}-01T00:00:00.000Z`);
                 const end = new Date(start);
-                end.setUTCMonth(end.getUTCMonth() + 1); 
+                end.setUTCMonth(end.getUTCMonth() + 1);
                 filter.checkInTime = { $gte: start, $lt: end };
             }
 
@@ -126,7 +138,7 @@ exports.getAll = (data) => {
 exports.getAllById = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const {empId, date, month } = data;
+            const { empId, date, month } = data;
             let filter = {};
 
             if (date) {
@@ -153,22 +165,22 @@ exports.getAllById = (data) => {
             if (!date && !month) {
                 const date = new Date();
                 const year = date.getFullYear();
-                const mon = (date.getMonth() + 1).toString().padStart(2, '0'); 
+                const mon = (date.getMonth() + 1).toString().padStart(2, '0');
                 const start = new Date(`${year}-${mon}-01T00:00:00.000Z`);
                 const end = new Date(start);
-                end.setUTCMonth(end.getUTCMonth() + 1); 
+                end.setUTCMonth(end.getUTCMonth() + 1);
                 filter.checkInTime = { $gte: start, $lt: end };
                 filter.empId = empId;
             }
-            
+
             const records = await attendance.find(filter).sort({ checkInTime: -1 });
             const WorkingHours = addWorkingHours(records);
             const data1 = {
                 records,
                 empId: empId,
-                totalWorkingHours:WorkingHours
+                totalWorkingHours: WorkingHours
             }
-            
+
             resolve({
                 message: "Employee CheckIn data fetched successfully!...",
                 data: data1
