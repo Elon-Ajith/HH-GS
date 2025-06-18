@@ -15,4 +15,6 @@ exports.findAll = async(empId) =>{
 
 exports.getCheckInTime =async (empId) =>{
     return await attendanceModel.findOne({empId})
+         .sort({ checkInTime: -1 }) // Sort by checkInTime in descending order
+        .exec();
 }
