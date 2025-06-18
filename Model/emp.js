@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 
 const empSchema = new mongoose.Schema({
     empId: {
-        type: String
+        type: String,
+        unique: true 
     },
     empName: {
         type: String
@@ -13,6 +14,7 @@ const empSchema = new mongoose.Schema({
     },
     checkIn:{
          type: Boolean,
+         default: false
     }    
 })
 module.exports = mongoose.model("Employee", empSchema);
