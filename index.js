@@ -4,6 +4,8 @@ const uri = require('./MongoDb/mongo');
 const mongoose = require('mongoose');
 const route = require('./Routes/routes')
 const cors = require('cors')
+const cron = require('node-cron')
+const axios = require('axios')
 
 app.use(cors())
 app.use(express.json());
@@ -27,6 +29,21 @@ mongoose
     .catch((error) => {
         console.log(`Error connecting to MongoDB: ${error.message}`);
     })
+
+// Function to hit the API
+function hitApi() {
+    axios
+        .get("https://hh-gs.onrender.com/")
+        .then((response) => {
+            console.log("Render API Hit:", response.data);
+        })
+        .catch((error) => {
+            console.error("Error hitting the API:", error);
+        });
+}
+
+// Schedule to run every 5 minutes
+cron.schedule("*/5 * * * *", hitApi);
 
 // Default route
 app.get("/", (req, res) => {
