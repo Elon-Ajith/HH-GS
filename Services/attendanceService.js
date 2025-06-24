@@ -211,39 +211,77 @@ function addWorkingHours(records) {
     return `${totalHours}:${totalMinutes}:${totalSecs}`;
 }
 
-exports.getAllAttendance = (data) => {
+exports.getAllAttendance1 = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const { startDate, endDate, type } = data;
-            const [sDay, sMonth, sYear] = startDate.split('/');
-            const [eDay, eMonth, eYear] = endDate.split('/');
+            const { startDate, endDate, type, month } = data;
+            let WorkingHours = null;
+            if (type === 'week') {
+                const [sDay, sMonth, sYear] = startDate.split('/');
+                const [eDay, eMonth, eYear] = endDate.split('/');
 
-            const start = new Date(`${sYear}-${sMonth}-${sDay}T00:00:00Z`);
-            const end = new Date(`${eYear}-${eMonth}-${eDay}T23:59:59Z`);
+                const start = new Date(`${sYear}-${sMonth}-${sDay}T00:00:00Z`);
+                const end = new Date(`${eYear}-${eMonth}-${eDay}T23:59:59Z`);
 
-            const query = {
-                checkInTime: {
-                    $gte: start,
-                    $lte: end
-                }
-            };
-            const attendanceRecords = await attendanceDao.findworkingHours(query);
-            const workingHoursData = calculateTotalWorkingHours(attendanceRecords);
-            const empData = await empDao.getAll();
-            const empMap = {};
-            empData.forEach(emp => {
-                empMap[emp.empId] = emp.empName;
-            });
+                const query = {
+                    checkInTime: {
+                        $gte: start,
+                        $lte: end
+                    }
+                };
+                const attendanceRecords = await attendanceDao.findworkingHours(query);
+                const workingHoursData = calculateTotalWorkingHours(attendanceRecords);
+                const empData = await empDao.getAll();
+                const empMap = {};
+                empData.forEach(emp => {
+                    empMap[emp.empId] = emp.empName;
+                });
 
-            // 4. Merge data
-            const enrichedData = Object.entries(workingHoursData).map(([empId, totalWorkingHours]) => ({
-                empId,
-                empName: empMap[empId] || "Unknown",
-                totalWorkingHours
-            }));
+                // 4. Merge data
+                const enrichedData = Object.entries(workingHoursData).map(([empId, totalWorkingHours]) => ({
+                    empId,
+                    empName: empMap[empId] || "Unknown",
+                    totalWorkingHours
+                }));
+                WorkingHours = enrichedData
+            }
+            if (type === "month") {
+                const [yearStr, monthStr] = month.split('-');
+                const year = parseInt(yearStr);
+                const monthData = parseInt(monthStr) - 1;
+
+                const start = new Date(Date.UTC(year, monthData, 1, 0, 0, 0));
+                const end = new Date(Date.UTC(year, monthData + 1, 0, 23, 59, 59));
+                const query = {
+                    checkInTime: {
+                        $gte: start,
+                        $lte: end
+                    }
+                };
+                const attendanceRecords = await attendanceDao.findworkingHours(query);
+                const workingHoursData = calculateTotalWorkingHours(attendanceRecords);
+                const empData = await empDao.getAll();
+                const empMap = {};
+                empData.forEach(emp => {
+                    empMap[emp.empId] = emp.empName;
+                });
+
+                // 4. Merge data
+                const enrichedData = Object.entries(workingHoursData).map(([empId, totalWorkingHours]) => ({
+                    empId,
+                    empName: empMap[empId] || "Unknown",
+                    totalWorkingHours
+                }));
+                WorkingHours = enrichedData
+                WorkingHours.sort((a, b) => a.empId.localeCompare(b.empId));
+
+            }
+            if (type === "day") {
+                WorkingHours = "day"
+            }
             resolve({
                 message: "Total working hours fetch successfully!...",
-                data: enrichedData
+                data: WorkingHours
             });
 
         } catch (error) {
@@ -256,6 +294,104 @@ exports.getAllAttendance = (data) => {
 
     })
 }
+
+exports.getAllAttendance = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { startDate, endDate, type, month } = data;
+            const validateStartDate = /^\d{2}\/\d{2}\/\d{4}$/.test(startDate)
+            const validateEndDate = /^\d{2}\/\d{2}\/\d{4}$/.test(endDate)
+            if (!validateStartDate && !validateEndDate) {
+                return reject({
+                    success: false,
+                    statusCode: 201,
+                    message: "Invalid start date or end date",
+                })
+            }
+
+            let WorkingHours = null;
+
+            const getEmployeeMap = async () => {
+                const empData = await empDao.getAll();
+                return empData.reduce((map, emp) => {
+                    map[emp.empId] = emp.empName;
+                    return map;
+                }, {});
+            };
+
+            const enrichWithEmployeeNames = (workingHoursData, empMap) => {
+                return Object.entries(workingHoursData).map(([empId, totalWorkingHours]) => ({
+                    empId,
+                    empName: empMap[empId] || "Unknown",
+                    totalWorkingHours
+                }));
+            };
+
+            let query = {};
+
+            switch (type) {
+                case 'week': {
+                    const [sDay, sMonth, sYear] = startDate.split('/');
+                    const [eDay, eMonth, eYear] = endDate.split('/');
+                    const start = new Date(`${sYear}-${sMonth}-${sDay}T00:00:00Z`);
+                    const end = new Date(`${eYear}-${eMonth}-${eDay}T23:59:59Z`);
+                    query.checkInTime = { $gte: start, $lte: end };
+                    break;
+                }
+                case 'month': {
+                    const [yearStr, monthStr] = month.split('-');
+                    const year = parseInt(yearStr);
+                    const monthIndex = parseInt(monthStr) - 1;
+                    const start = new Date(Date.UTC(year, monthIndex, 1, 0, 0, 0));
+                    const end = new Date(Date.UTC(year, monthIndex + 1, 0, 23, 59, 59));
+                    query.checkInTime = { $gte: start, $lte: end };
+                    break;
+                }
+                case 'day': {
+                    const [sDay, sMonth, sYear] = startDate.split('/');
+                    const start = new Date(`${sYear}-${sMonth}-${sDay}T00:00:00Z`); console.log("object5454984231837454", start)
+                    const end = new Date(`${sYear}-${sMonth}-${sDay}T23:59:59Z`); console.log("object5454984231837454", end)
+                    query.checkInTime = { $gte: start, $lte: end };
+                    break;
+                }
+                default:
+                    throw new Error("Invalid type provided");
+            }
+
+            // Process for week/month
+            if (type === 'week' || type === 'month' || type === 'day') {
+                const attendanceRecords = await attendanceDao.findworkingHours(query);
+                const workingHoursData = calculateTotalWorkingHours(attendanceRecords);
+                const empMap = await getEmployeeMap();
+                WorkingHours = enrichWithEmployeeNames(workingHoursData, empMap);
+
+                // Optional sorting
+                WorkingHours.sort((a, b) => a.empName.localeCompare(b.empName));
+                // Add serial numbers
+                WorkingHours = WorkingHours.map((item, index) => ({
+                    sNo: index + 1,
+                    ...item
+                }));
+            }
+
+            const isEmpty = Array.isArray(WorkingHours) && WorkingHours.length === 0;
+
+            return resolve({
+                success: true,
+                message: isEmpty ? "No working hours found for the given criteria." : "Total working hours fetched successfully!...",
+                data: WorkingHours
+            });
+        } catch (error) {
+            console.error(error);
+            return reject({
+                success: false,
+                message: "An error occurred",
+                error: error.message
+            });
+        }
+    })
+};
+
 
 function calculateTotalWorkingHours(data) {
     const result = {};
