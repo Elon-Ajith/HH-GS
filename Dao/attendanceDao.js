@@ -18,3 +18,7 @@ exports.getCheckInTime =async (empId) =>{
          .sort({ checkInTime: -1 }) // Sort by checkInTime in descending order
         .exec();
 }
+
+exports.findworkingHours = async(query) =>{
+    return await attendanceModel.find(query)
+}

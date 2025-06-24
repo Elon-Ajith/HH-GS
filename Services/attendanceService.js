@@ -1,6 +1,7 @@
 const attendance = require('../Model/attendance');
 const empModel = require('../Model/emp');
 const attendanceDao = require('../Dao/attendanceDao')
+const empDao = require('../Dao/empDao')
 
 exports.checkIn = (empId) => {
     return new Promise(async (resolve, reject) => {
@@ -31,7 +32,7 @@ exports.checkIn = (empId) => {
             }
             resolve({
                 message: "Employee CheckIn successfully!...",
-                data:result
+                data: result
             });
         } catch (error) {
             reject({
@@ -138,6 +139,7 @@ exports.getAll = (data) => {
 exports.getAllById = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
+            console.log("object", data)
             const { empId, date, month } = data;
             let filter = {};
 
@@ -172,7 +174,6 @@ exports.getAllById = (data) => {
                 filter.checkInTime = { $gte: start, $lt: end };
                 filter.empId = empId;
             }
-
             const records = await attendance.find(filter).sort({ checkInTime: -1 });
             const WorkingHours = addWorkingHours(records);
             const data1 = {
@@ -186,6 +187,7 @@ exports.getAllById = (data) => {
                 data: data1
             });
         } catch (error) {
+            console.log(error)
             reject({
                 message: "An error occurred",
                 error: error.message
@@ -209,5 +211,78 @@ function addWorkingHours(records) {
     return `${totalHours}:${totalMinutes}:${totalSecs}`;
 }
 
+exports.getAllAttendance = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { startDate, endDate, type } = data;
+            const [sDay, sMonth, sYear] = startDate.split('/');
+            const [eDay, eMonth, eYear] = endDate.split('/');
 
+            const start = new Date(`${sYear}-${sMonth}-${sDay}T00:00:00Z`);
+            const end = new Date(`${eYear}-${eMonth}-${eDay}T23:59:59Z`);
+
+            const query = {
+                checkInTime: {
+                    $gte: start,
+                    $lte: end
+                }
+            };
+            const attendanceRecords = await attendanceDao.findworkingHours(query);
+            const workingHoursData = calculateTotalWorkingHours(attendanceRecords);
+            const empData = await empDao.getAll();
+            const empMap = {};
+            empData.forEach(emp => {
+                empMap[emp.empId] = emp.empName;
+            });
+
+            // 4. Merge data
+            const enrichedData = Object.entries(workingHoursData).map(([empId, totalWorkingHours]) => ({
+                empId,
+                empName: empMap[empId] || "Unknown",
+                totalWorkingHours
+            }));
+            resolve({
+                message: "Total working hours fetch successfully!...",
+                data: enrichedData
+            });
+
+        } catch (error) {
+            console.log(error)
+            reject({
+                message: "An error occurred",
+                error: error.message
+            });
+        }
+
+    })
+}
+
+function calculateTotalWorkingHours(data) {
+    const result = {};
+
+    data.forEach(entry => {
+        const { empId, workingHours } = entry;
+        if (!workingHours) return; // Skip entries with no checkout time
+
+        const [h, m, s] = workingHours.split(':').map(Number);
+        const totalSeconds = h * 3600 + m * 60 + s;
+
+        if (!result[empId]) {
+            result[empId] = 0;
+        }
+
+        result[empId] += totalSeconds;
+    });
+
+    // Convert total seconds back to HH:mm:ss format
+    for (let empId in result) {
+        const totalSeconds = result[empId];
+        const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+        result[empId] = `${hours}:${minutes}:${seconds}`;
+    }
+
+    return result;
+}
 
