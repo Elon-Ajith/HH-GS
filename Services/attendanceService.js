@@ -1,7 +1,9 @@
 const attendance = require('../Model/attendance');
 const empModel = require('../Model/emp');
-const attendanceDao = require('../Dao/attendanceDao')
-const empDao = require('../Dao/empDao')
+const attendanceDao = require('../Dao/attendanceDao');
+const empDao = require('../Dao/empDao');
+const pdfFunction = require('../PDF Document/pdf')
+
 
 exports.checkIn = (empId) => {
     return new Promise(async (resolve, reject) => {
@@ -299,15 +301,15 @@ exports.getAllAttendance = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             const { startDate, endDate, type, month } = data;
-            const validateStartDate = /^\d{2}\/\d{2}\/\d{4}$/.test(startDate)
-            const validateEndDate = /^\d{2}\/\d{2}\/\d{4}$/.test(endDate)
-            if (!validateStartDate && !validateEndDate) {
-                return reject({
-                    success: false,
-                    statusCode: 201,
-                    message: "Invalid start date or end date",
-                })
-            }
+            // const validateStartDate = /^\d{2}\/\d{2}\/\d{4}$/.test(startDate)
+            // const validateEndDate = /^\d{2}\/\d{2}\/\d{4}$/.test(endDate)
+            // if (!validateStartDate && !validateEndDate) {
+            //     return reject({
+            //         success: false,
+            //         statusCode: 201,
+            //         message: "Invalid start date or end date",
+            //     })
+            // }
 
             let WorkingHours = null;
 
@@ -373,13 +375,14 @@ exports.getAllAttendance = (data) => {
                     ...item
                 }));
             }
-
+            const base64Data = await pdfFunction.generatePDFBase64(WorkingHours);
             const isEmpty = Array.isArray(WorkingHours) && WorkingHours.length === 0;
 
             return resolve({
                 success: true,
                 message: isEmpty ? "No working hours found for the given criteria." : "Total working hours fetched successfully!...",
-                data: WorkingHours
+                data: WorkingHours,
+                    base64Data
             });
         } catch (error) {
             console.error(error);
