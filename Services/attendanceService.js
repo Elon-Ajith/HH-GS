@@ -299,15 +299,15 @@ exports.getAllAttendance = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             const { startDate, endDate, type, month } = data;
-            const validateStartDate = /^\d{2}\/\d{2}\/\d{4}$/.test(startDate)
-            const validateEndDate = /^\d{2}\/\d{2}\/\d{4}$/.test(endDate)
-            if (!validateStartDate && !validateEndDate) {
-                return reject({
-                    success: false,
-                    statusCode: 201,
-                    message: "Invalid start date or end date",
-                })
-            }
+            // const validateStartDate = /^\d{2}\/\d{2}\/\d{4}$/.test(startDate)
+            // const validateEndDate = /^\d{2}\/\d{2}\/\d{4}$/.test(endDate)
+            // if (!validateStartDate && !validateEndDate) {
+            //     return reject({
+            //         success: false,
+            //         statusCode: 201,
+            //         message: "Invalid start date or end date",
+            //     })
+            // }
 
             let WorkingHours = null;
 
