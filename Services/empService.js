@@ -40,6 +40,7 @@ exports.getAll = () => {
     return new Promise(async (resolve, reject) => {
         try {
             const employees = await empDao.getAll();
+            employees.sort((a, b) => a.empName.localeCompare(b.empName));
             resolve({
                 message: "Employee data fetched successfully!...",
                 data: employees
