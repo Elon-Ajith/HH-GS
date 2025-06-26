@@ -8,6 +8,16 @@ const pdfFunction = require('../PDF Document/pdf')
 exports.checkIn = (empId) => {
     return new Promise(async (resolve, reject) => {
         try {
+            const existingCheckIn = await attendance.findOne({
+                empId,
+                checkOutTime: { $exists: false }
+            }).sort({ checkInTime: -1 });
+            if (existingCheckIn) {
+                return reject({
+                    statusCode: 201,
+                    message: "Already checked in and not yet checked out!"
+                });
+            }
             let time;
             const attendances = new attendance({
                 empId,
@@ -52,9 +62,10 @@ exports.checkOut = (empId) => {
                 empId,
                 checkOutTime: { $exists: false }
             }).sort({ checkInTime: -1 });
-            console.log("attendances", attendances)
+            
             if (!attendances) {
                 return reject({
+                    statusCode:201,
                     message: 'No active check-in found!...'
                 })
             }
@@ -382,7 +393,7 @@ exports.getAllAttendance = (data) => {
                 success: true,
                 message: isEmpty ? "No working hours found for the given criteria." : "Total working hours fetched successfully!...",
                 data: WorkingHours,
-                    base64Data
+                base64Data
             });
         } catch (error) {
             console.error(error);
@@ -394,7 +405,6 @@ exports.getAllAttendance = (data) => {
         }
     })
 };
-
 
 function calculateTotalWorkingHours(data) {
     const result = {};
