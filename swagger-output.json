@@ -106,6 +106,29 @@
         }
       }
     },
+    "/api/emp/getAbsence": {
+      "get": {
+        "tags": [
+          "Employee controller"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
     "/api/emp/delete/{id}": {
       "delete": {
         "tags": [
@@ -159,9 +182,6 @@
           },
           "201": {
             "description": "Created"
-          },
-          "500": {
-            "description": "Internal Server Error"
           }
         }
       }
@@ -192,9 +212,6 @@
           },
           "201": {
             "description": "Created"
-          },
-          "500": {
-            "description": "Internal Server Error"
           }
         }
       }

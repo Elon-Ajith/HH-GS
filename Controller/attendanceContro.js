@@ -15,7 +15,9 @@ exports.checkIn = (req, res) => {
             return res.status(200).json(response);
         })
         .catch((error) => {
-            return res.status(500).json({
+            const status = error.statusCode || 500;
+            return res.status(status).json({
+                success: false,
                 message: error.message || "Internal server error",
             });
         });
@@ -35,7 +37,9 @@ exports.checkOut = (req, res) => {
             return res.status(200).json(response);
         })
         .catch((error) => {
-            return res.status(500).json({
+            const status = error.statusCode || 500;
+            return res.status(status).json({
+                success: false,
                 message: error.message || "Internal server error",
             });
         });

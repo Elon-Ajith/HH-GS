@@ -1,4 +1,5 @@
 
+const { response } = require('express');
 const empService = require('../Services/empService')
 
 exports.upsert = (req, res) => {
@@ -14,8 +15,8 @@ exports.upsert = (req, res) => {
         .then((response) => {
             return res.status(200).json(response)
         })
-        .catch((error)=>{
-             res.status(500).json({
+        .catch((error) => {
+            res.status(500).json({
                 message: error.message || "Internal server error",
             });
         })
@@ -54,6 +55,29 @@ exports.getById = (req, res) => {
             });
         });
 };
+
+exports.getAttendance = (req, res) => {
+    //#swagger.tags = ['Employee controller']
+    const { month } = req.query;
+    if (!month) {
+        return res.status(201).json({
+            message: "month is required!..."
+        })
+    }
+    empService
+        .getAttendance(month)
+        .then((response) => {
+            res.status(200).json(response)
+        })
+        .catch((error) => {
+            const status = error.statusCode || 500
+            return res.status(status).json({
+                success: false,
+                message: error.message || "something went wrong"
+            })
+        })
+
+}
 
 exports.delete = (req, res) => {
     //#swagger.tags = ['Employee controller']

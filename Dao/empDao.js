@@ -6,7 +6,6 @@ exports.create = async (data) => {
 }
 
 exports.findById = async (id) => {
-    console.log("4234356465768")
     const data = await empModel.findById(id);
     return  data;
 }
@@ -40,3 +39,4 @@ exports.getById = async (id) => {
 exports.delete = async (id) => {
     return await empModel.findByIdAndDelete(id);
 };
+
