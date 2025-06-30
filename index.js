@@ -6,6 +6,7 @@ const route = require('./Routes/routes')
 const cors = require('cors')
 const cron = require('node-cron')
 const axios = require('axios')
+const autoCheck = require('./Cron/autoCheckOut')
 
 app.use(cors())
 app.use(express.json());
@@ -45,6 +46,9 @@ function hitApi() {
 // Schedule to run every 5 minutes
 cron.schedule("*/5 * * * *", hitApi);
 
+cron.schedule('59 23 * * *', async () => {
+  await autoCheck.autoCheckoutUnmarkedStaff();
+});
 // Default route
 app.get("/", (req, res) => {
     res.send("Welcome to HH-GS!");
@@ -54,3 +58,5 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Server connected on port${PORT}`)
 })
+
+
