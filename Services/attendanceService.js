@@ -4,7 +4,6 @@ const attendanceDao = require('../Dao/attendanceDao');
 const empDao = require('../Dao/empDao');
 const pdfFunction = require('../PDF Document/pdf')
 
-
 exports.checkIn = (empId) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -152,7 +151,6 @@ exports.getAll = (data) => {
 exports.getAllById = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log("object", data)
             const { empId, date, month } = data;
             let filter = {};
 
@@ -434,4 +432,3 @@ function calculateTotalWorkingHours(data) {
 
     return result;
 }
-

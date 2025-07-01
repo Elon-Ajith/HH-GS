@@ -1,5 +1,6 @@
 const empDao = require('../Dao/empDao')
-const attendanceDao = require('../Dao/attendanceDao')
+const attendanceDao = require('../Dao/attendanceDao');
+const { $where } = require('../Model/attendance');
 
 exports.upsert = (data) => {
     return new Promise(async (resolve, reject) => {
@@ -34,7 +35,7 @@ exports.upsert = (data) => {
             });
         }
     })
-}
+};
 
 exports.getAll = () => {
     return new Promise(async (resolve, reject) => {
@@ -95,72 +96,18 @@ exports.getById = (empId) => {
     });
 };
 
-exports.getAttendance1 = (month) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const start = new Date(`${month}-01T00:00:00.000Z`);
-            const end = new Date(`${month}-01T00:00:00.000Z`);
-            end.setMonth(end.getMonth() + 1);
-            const query = {
-                checkInTime: {
-                    $gte: start,
-                    $lt: end
-                }
-            }
-            const getData = await attendanceDao.findworkingHours(query);
-            // Step 2: Get all employee IDs
-            const allEmployees = await empDao.getAll(); // Replace with your actual employee DAO
-            const allEmpIds = allEmployees.map(emp => emp.empId);
-
-            // Step 3: Group attendance by empId and date
-            const presentMap = {};
-            getData.forEach(record => {
-                const empId = record.empId;
-                const date = new Date(record.checkInTime).toISOString().split('T')[0];
-                if (!presentMap[date]) presentMap[date] = new Set();
-                presentMap[date].add(empId);
-            });
-
-            // Step 4: Generate all days in the month
-            const allDates = [];
-            let d = new Date(start);
-            while (d < end) {
-                allDates.push(d.toISOString().split('T')[0]);
-                d.setDate(d.getDate() + 1);
-            }
-
-            // Step 5: Build absence list
-            const absenceMap = {};
-            for (const date of allDates) {
-                const presentEmpSet = presentMap[date] || new Set();
-                const absentList = allEmpIds.filter(id => !presentEmpSet.has(id));
-                absenceMap[date] = absentList;
-            }
-
-            return resolve({
-                message: "data fetch suceessfully!....",
-                absenceData: absenceMap
-            })
-        } catch (error) {
-            reject({
-                message: "An error occurred",
-                error: error.message
-            });
-        }
-    })
-}
-
 exports.getAttendance = (month) => {
     return new Promise(async (resolve, reject) => {
         try {
-             const validateStartDate = /^\d{4}\-\d{2}$/.test(month);
-            if (!validateStartDate ) {
+            const validateStartDate = /^\d{4}\-\d{2}$/.test(month);
+            if (!validateStartDate) {
                 return reject({
                     success: false,
                     statusCode: 201,
                     message: "Invalid month format",
                 })
             }
+
             const start = new Date(`${month}-01T00:00:00.000Z`);
             const end = new Date(`${month}-01T00:00:00.000Z`);
             end.setMonth(end.getMonth() + 1);
@@ -171,7 +118,6 @@ exports.getAttendance = (month) => {
                     $lt: end
                 }
             };
-
             const getData = await attendanceDao.findworkingHours(query);
 
             // Get all employees
@@ -199,12 +145,22 @@ exports.getAttendance = (month) => {
                 const day = d.getDay(); // 0 = Sunday, 6 = Saturday
                 if (day !== 0 && day !== 6) {
                     const presentSet = presentMap[isoDate] || new Set();
+                    const halfDayRecords = await calculateWorking(new Date(d));
+                    const halfDayEmpIds = new Set(halfDayRecords.map(r => r.empId));
                     const absentEmpIds = allEmpIds.filter(id => !presentSet.has(id));
+
                     absentEmpIds.forEach(empId => {
                         leaveData.push({
                             date: isoDate,
                             employeeName: empMap[empId],
                             leaveType: 'Absent'
+                        });
+                    });
+                    halfDayRecords.forEach(record => {
+                        leaveData.push({
+                            date: record.date,
+                            employeeName: empMap[record.empId],
+                            leaveType: "Halfday absent"
                         });
                     });
                 }
@@ -215,7 +171,7 @@ exports.getAttendance = (month) => {
                 leaveData
             });
 
-        } catch (error) {console.log("object",error)
+        } catch (error) {
             reject({
                 message: "An error occurred",
                 error: error.message
@@ -223,6 +179,7 @@ exports.getAttendance = (month) => {
         }
     });
 };
+
 exports.delete = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -244,3 +201,63 @@ exports.delete = (id) => {
     });
 };
 
+async function calculateWorking(date) {
+    const start = new Date(date);
+    start.setUTCHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 1);
+    end.setUTCHours(0, 0, 0, 0); // start of next day
+
+    const query = {
+        checkInTime: {
+            $gte: start,
+            $lt: end
+        }
+    };
+
+    const empAttendance = await empDao.findEmp(query);
+
+    const HALF_DAY_THRESHOLD_HOURS = 5; // threshold for half day
+
+    const empWorkMap = {};
+
+    // Group all time durations by empId
+    empAttendance.forEach(record => {
+        if (!record.empId || !record.checkInTime || !record.checkOutTime) return;
+
+        const empId = record.empId;
+        const durationHrs = convertToDecimalHours(record.workingHours);
+
+        if (!empWorkMap[empId]) {
+            empWorkMap[empId] = 0;
+        }
+
+        empWorkMap[empId] += durationHrs;
+    });
+
+    const halfDayList = [];
+
+    for (const [empId, totalHours] of Object.entries(empWorkMap)) {
+        if (totalHours > 0 && totalHours < HALF_DAY_THRESHOLD_HOURS) {
+            halfDayList.push({
+                empId,
+                date: start.toISOString().split('T')[0],
+                workedHours: totalHours.toFixed(2),
+                leaveType: 'Half Day'
+            });
+        }
+    }
+
+    console.log("Half Day Records:", halfDayList);
+    return halfDayList;
+}
+
+function convertToDecimalHours(timeStr) {
+    const [hoursStr, minutesStr, secondsStr] = timeStr.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+    const seconds = parseInt(secondsStr, 10);
+
+    return hours + (minutes / 60) + (seconds / 3600);
+}

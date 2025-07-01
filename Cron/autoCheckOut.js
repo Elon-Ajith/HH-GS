@@ -20,7 +20,7 @@ exports.autoCheckoutUnmarkedStaff = async () => {
     // Update each record
     for (const record of recordsToUpdate) {
       record.checkOutTime = checkoutTime;
-      record.workingHours = '09:00:00';
+      record.workingHours = '04:30:00';
       await record.save();
       console.log(`Auto checkout for employee ${record.empId}`);
                 await empModel.findOneAndUpdate(
@@ -34,3 +34,4 @@ exports.autoCheckoutUnmarkedStaff = async () => {
     console.error("Error in auto-checkout service:", err);
   }
 };
+

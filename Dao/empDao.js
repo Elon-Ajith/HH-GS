@@ -1,3 +1,4 @@
+const attendance = require('../Model/attendance');
 const empModel = require('../Model/emp')
 
 exports.create = async (data) => {
@@ -39,4 +40,8 @@ exports.getById = async (id) => {
 exports.delete = async (id) => {
     return await empModel.findByIdAndDelete(id);
 };
+
+exports.findEmp = async(query) =>{
+    return await attendance.find(query);
+}
 
