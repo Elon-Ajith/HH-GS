@@ -96,7 +96,7 @@ exports.getById = (empId) => {
     });
 };
 
-exports.getAttendance = (month) => {
+exports.getAttendance1 = (month) => {
     return new Promise(async (resolve, reject) => {
         try {
             const validateStartDate = /^\d{4}\-\d{2}$/.test(month);
@@ -147,7 +147,8 @@ exports.getAttendance = (month) => {
                     const presentSet = presentMap[isoDate] || new Set();
                     const halfDayRecords = await calculateWorking(new Date(d));
                     const halfDayEmpIds = new Set(halfDayRecords.map(r => r.empId));
-                    const absentEmpIds = allEmpIds.filter(id => !presentSet.has(id));
+                    const absentEmpIds = allEmpIds.filter(id => !presentSet.has(id) && !halfDayEmpIds.has(id));
+                    // const absentEmpIds = allEmpIds.filter(id => !presentSet.has(id));
 
                     absentEmpIds.forEach(empId => {
                         leaveData.push({
@@ -163,6 +164,95 @@ exports.getAttendance = (month) => {
                             leaveType: "Halfday absent"
                         });
                     });
+                }
+                d.setDate(d.getDate() + 1);
+            }
+            return resolve({
+                message: "Leave data fetched successfully (excluding weekends)",
+                leaveData
+            });
+
+        } catch (error) {
+            reject({
+                message: "An error occurred",
+                error: error.message
+            });
+        }
+    });
+};
+
+exports.getAttendance = (month) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const validateStartDate = /^\d{4}\-\d{2}$/.test(month);
+            if (!validateStartDate) {
+                return reject({
+                    success: false,
+                    statusCode: 201,
+                    message: "Invalid month format",
+                })
+            }
+
+            const start = new Date(`${month}-01T00:00:00.000Z`);
+            const end = new Date(`${month}-01T00:00:00.000Z`);
+            end.setMonth(end.getMonth() + 1);
+
+            const query = {
+                checkInTime: {
+                    $gte: start,
+                    $lt: end
+                }
+            };
+            const getData = await attendanceDao.findworkingHours(query);
+
+            // Get all employees
+            const allEmployees = await empDao.getAll(); // { empId, empName }
+            const empMap = {};
+            const allEmpIds = allEmployees.map(emp => {
+                empMap[emp.empId] = emp.empName || 'Unknown';
+                return emp.empId;
+            });
+
+            // Group attendance by empId and date
+            const presentMap = {};
+            getData.forEach(record => {
+                const empId = record.empId;
+                const date = new Date(record.checkInTime).toISOString().split('T')[0];
+                if (!presentMap[date]) presentMap[date] = new Set();
+                presentMap[date].add(empId);
+            });
+
+            // Build leaveData without weekends
+            const leaveData = [];
+            const today = new Date();
+            let d = new Date(start);
+            while (d < end) {
+                const isoDate = d.toISOString().split('T')[0];
+                const day = d.getDay(); // 0 = Sunday, 6 = Saturday
+                if (day !== 0 && day !== 6) {
+                    const isFuture = d > today;
+                    if(!isFuture){
+                        const presentSet = presentMap[isoDate] || new Set();
+                    const halfDayRecords = await calculateWorking(new Date(d));
+                    const halfDayEmpIds = new Set(halfDayRecords.map(r => r.empId));
+                    const absentEmpIds = allEmpIds.filter(id => !presentSet.has(id) && !halfDayEmpIds.has(id));
+                    // const absentEmpIds = allEmpIds.filter(id => !presentSet.has(id));
+
+                    absentEmpIds.forEach(empId => {
+                        leaveData.push({
+                            date: isoDate,
+                            employeeName: empMap[empId],
+                            leaveType: 'Absent'
+                        });
+                    });
+                    halfDayRecords.forEach(record => {
+                        leaveData.push({
+                            date: record.date,
+                            employeeName: empMap[record.empId],
+                            leaveType: "Halfday absent"
+                        });
+                    });
+                    }
                 }
                 d.setDate(d.getDate() + 1);
             }
@@ -261,3 +351,4 @@ function convertToDecimalHours(timeStr) {
 
     return hours + (minutes / 60) + (seconds / 3600);
 }
+
